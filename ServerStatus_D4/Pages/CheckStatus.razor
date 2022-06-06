@@ -1,0 +1,134 @@
+﻿@page "/CheckStatus"
+
+
+@using DataLibrary1
+@using ServerStatus_D4.Models
+@using Microsoft.Extensions.Configuration
+@inject IServerDataAccess _data
+@inject IConfiguration _config
+
+
+
+<div class="sticky-top">
+    @if (@pingTime <= 10)
+    {
+        <div class="alert alert-success" role="alert">
+            <a href="#" class="alert-link">Server is running </a>
+        </div>
+    }
+    else if (@pingTime <= 20)
+    {
+        <div class="alert alert-info" role="alert">
+            <a href="#" class="alert-link">Server missed Ping </a>
+        </div>
+
+    }
+    else if (@pingTime <= 30)
+    {
+        <div class="alert alert-warning" role="alert">
+            <a href="#" class="alert-link">Server unsatable </a>
+        </div>
+
+    }
+    else if (pingTime > 50)
+    {
+        <div class="alert alert-danger" role="alert">
+            <a href="#" class="alert-link">Server Down </a>
+        </div>
+
+    }
+</div>
+<h3>Last 5 entries : </h3>
+
+
+@if (server == null)
+{
+    <p><em>Loading...</em></p>
+
+}
+else
+{
+
+    <table class="table table-dark">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>ClientID</th>
+                <th>Date</th>
+
+
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var p in server)
+            {
+                <tr>
+                    <td>@p.ID</td>
+                    <td>@p.ClientID</td>
+                    <td>@p.Date</td>
+
+
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    <button class="btn btn-info" @onclick="getMoreEntries">See more entries </button>
+    <br />
+    <br />
+    <button class="btn btn-info" @onclick="getFewerEntries">See fewer entries </button>
+    <br />
+    <br />
+
+
+}
+
+
+
+
+
+@code {
+
+    List<ServerModel> server;
+    public double pingTime;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await conn();
+        getLastEntry();
+
+    }
+
+
+    public double getLastEntry()
+    {
+
+        DateTime LastEntry = server[0].Date;
+        DateTime SecondLatEntry = server[1].Date;
+
+        double pingTime = (SecondLatEntry.Subtract(LastEntry).TotalMinutes);
+
+
+        return pingTime;
+
+    }
+    public async Task conn()
+    {
+        string sql = "select top 5  * from HVAC_PollLog order by Id desc ";
+        server = await _data.LoadData<ServerModel, dynamic>(sql, new { }, _config.GetConnectionString("default"));
+        //getLastEntry();
+
+    }
+
+    public async Task getMoreEntries()
+    {
+        string sql = "select top 20  * from HVAC_PollLog order by Id desc ";
+        server = await _data.LoadData<ServerModel, dynamic>(sql, new { }, _config.GetConnectionString("default"));
+    }
+
+    public async Task getFewerEntries()
+    {
+        string sql = "select top 5 * from HVAC_PollLog order by Id desc ";
+        server = await _data.LoadData<ServerModel, dynamic>(sql, new { }, _config.GetConnectionString("default"));
+    }
+}

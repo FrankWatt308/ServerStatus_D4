@@ -1,0 +1,159 @@
+﻿@page "/ScheduleStatus"
+
+@using DataLibrary1
+@using ServerStatus_D4.Models
+@using Microsoft.Extensions.Configuration
+@inject IServerDataAccess _data
+@inject IConfiguration _config
+
+<h3>List of all scheduled Connections : </h3>
+<br />
+
+@if (server == null  )
+{
+    <p><em>Loading...</em></p>
+
+}
+else if(isSelected==false)
+{
+
+    <div class="table-responsive"style="width: 90vw" >
+        <table class="table table-hover table-dark">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>ClientID</th>
+                    <td>Startdate</td>
+                    <td>EndDate</td>
+                    <td>RefineType</td>
+                    <td>Handeld</td>
+                    <td>ScheduledTime</td>
+
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var p in server)
+                {
+                    DateTime mySting = p.EndDate.Date;
+
+                    <tr @onclick="()=>getSelected(mySting)">
+                        <td>@p.ID</td>
+                        <td>@p.ClientID</td>
+                        <td>@p.Startdate</td>
+                        <td>@p.EndDate</td>
+                        <td>@p.RefineType</td>
+                        <td>@p.Handled</td>
+                        <td>@p.ScheduledTime</td>
+
+
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+
+
+
+
+
+}
+
+
+
+@if (isSelected)
+{
+    <div>
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>ClientID</th>
+                    <td>Level</td>
+                    <td>DateTime</td>
+                    <td>Message</td>
+
+
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var p in server2)
+                {
+
+                    <tr>
+                        <td>@p.ID</td>
+                        <td>@p.ClientID</td>
+                        <td>@p.Level</td>
+                        <td>@p.DateTime</td>
+                        <td>@p.Message</td>
+
+
+
+                    </tr>
+                }
+            </tbody>
+        </table>
+
+    </div>
+}
+
+
+
+
+
+
+
+
+
+
+
+
+<button class="btn btn-info" @onclick="getScheduledRecords">See Scheduled transactions </button>
+<span></span>
+<button class="btn btn-primary" @onclick="getHandledRecodrs">See Handled transactions</button>
+
+<hr style="width:5px" />
+
+
+@code {
+
+    public bool isSelected = false;
+    List<ServerModel> server;
+    List<ServerModel> server2;
+    public string sql;
+    public string myInput;
+    public string sql3;
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        await getScheduledRecords();
+
+    }
+
+    public async Task getHandledRecodrs()
+    {
+        sql = "select * from HVAC_EnergyManagementSchedule where Handled=1 order by EndDate desc";
+        server = await _data.LoadData<ServerModel, dynamic>(sql, new { }, _config.GetConnectionString("default"));
+        isSelected = false;
+
+    }
+    public async Task getScheduledRecords()
+    {
+        sql = "select top 20 * from HVAC_EnergyManagementSchedule where Handled=0 order by Id desc";
+        server = await _data.LoadData<ServerModel, dynamic>(sql, new { }, _config.GetConnectionString("default"));
+        isSelected = false;
+
+    }
+    public async Task getSelected(DateTime myDate)
+    {
+        sql3 = "select  * from HVAC_LogMessage where DATEPART(year,DateTime) = '" + myDate.Year + "' and DatePart(month,DateTime) = '" + myDate.Month + "' and DATEPART(day,DateTime) = '" + myDate.Day + "'";
+
+        //sql3 = "select  * from HVAC_LogMessage where  CONVERT(VARCHAR(50),[DateTime],23) like '%" + myDate.Date.ToString("yyyy-MM-dd") + "%'";
+        server2 = await _data.LoadData<ServerModel, dynamic>(sql3, new { }, _config.GetConnectionString("default"));
+        isSelected = true;
+    }
+
+
+
+}

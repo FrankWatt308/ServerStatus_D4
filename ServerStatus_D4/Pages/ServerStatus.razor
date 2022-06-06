@@ -1,0 +1,88 @@
+﻿@page "/ServerStatus"
+
+@using DataLibrary1
+@using ServerStatus_D4.Models
+@using Microsoft.Extensions.Configuration
+@inject IServerDataAccess _data
+@inject IConfiguration _config
+
+
+
+<h3>Message Log :</h3>
+
+@*<HxCalendar @bind-SelectedDate="SelectedDate"/>
+<p>Selected dat : @SelectedDate.ToString("dd/MM/yyyy")</p>*@
+
+
+
+@if (server == null)
+{
+    <p><em>Loading...</em></p>
+
+}
+else
+{
+
+    <table class="table table-dark table-striped table-">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>ClientID</th>
+                <th>Date</th>
+                <th>Message</th>
+
+
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var p in server)
+            {
+                <tr>
+                    <td>@p.ID</td>
+                    <td>@p.ClientID</td>
+                    <td>@p.DateTime</td>
+                    <td>@p.Message</td>
+
+
+                </tr>
+            }
+        </tbody>
+    </table>
+
+
+
+
+}
+<button class="btn btn-info" @onclick="getAll">See all records </button>
+
+
+@code {
+
+
+    List<ServerModel> server;
+    DateTime SelectedDate { get; set; } = DateTime.Now;
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        string sql = "select top 20 * from HVAC_LogMessage order by Id desc";
+        server = await _data.LoadData<ServerModel, dynamic>(sql, new { }, _config.GetConnectionString("default"));
+
+    }
+
+    public async Task getAll()
+    {
+        string sql = "select  * from HVAC_LogMessage order by Id desc";
+        server = await _data.LoadData<ServerModel, dynamic>(sql, new { }, _config.GetConnectionString("default"));
+
+    }
+
+}
+
+
+
+
+
+
+
+
